@@ -188,7 +188,7 @@ df.head()
 # In[10]:
 
 
-compress_dataframe(df)
+#compress_dataframe(df)
 
 
 # In[11]:
@@ -220,7 +220,7 @@ df_weather.head()
 # In[14]:
 
 
-compress_dataframe(df_weather)
+#compress_dataframe(df_weather)
 
 
 # In[15]:
@@ -252,7 +252,7 @@ df_building_metadata.head()
 # In[18]:
 
 
-compress_dataframe(df_building_metadata)
+#compress_dataframe(df_building_metadata)
 
 
 # # 3.0 - CLEAN THE DATASET
@@ -279,6 +279,7 @@ print(round(df.isna().sum().sort_values(ascending=False) / len(df.index) * 100, 
 
 # Show how many nulls there are in the weather dataset (expressed as a percentage)
 print(round(df_weather.isna().sum().sort_values(ascending=False) / len(df_weather.index) * 100, 3))
+
 
 
 # In[22]:
@@ -405,7 +406,10 @@ print(df['timestamp'].head(10))
 
 # Extract the year from each timestamp:
 
-df['year'] = df['timestamp'].dt.year.astype('uint8')
+df['year'] = pd.to_datetime(df['timestamp']).dt.year
+
+df['timestamp']=pd.to_datetime(df['timestamp'])
+#.dt.year.astype('uint8')
 
 # Examine the different years for which the data was collected:
 
@@ -418,7 +422,7 @@ df = df.drop(['year'], axis=1)
 
 # Extract the month column:
 
-df['month'] = df['timestamp'].dt.month.astype('uint8')
+df['month'] = df['timestamp'].dt.month#.astype('uint8')
 
 # Examine the month column:
 
@@ -435,7 +439,7 @@ sns.countplot(df['meter'],order=df['meter'].value_counts().sort_values().index)
 plt.title("Count Distribution of different Energey Types")
 plt.xlabel("Energy")
 plt.ylabel("Frequency")
-
+plt.show()
 # Based on our countplot, we can see that Electricity has the highest frequency, followed by ChilledWater.
 # Steam has lower frequency than the two above, and HotWater has the lowest.
 
@@ -518,20 +522,94 @@ grp3_df=df[df['site_id'].isin(similarity_constructor[clusters_study==3].index.va
 grp4_df=df[df['site_id'].isin(similarity_constructor[clusters_study==4].index.values)]
 
 grp2_df.columns
-plt.plot(grp2_df['meter_reading'])
-plt.show()
+
+
 
 grp2_df[['meter_reading','month','timestamp','site_id']]
 
-grp2_df_rev=grp2_df.groupby(['timestamp'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
+grp2_df['date']=grp2_df['timestamp'].dt.date
+grp2_df_rev=grp2_df.groupby(['date'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
 
 grp2_df_rev.columns
 
 plt.plot(grp2_df_rev['meter_reading'])
 plt.show()
 
+from statsmodels.tsa.stattools import adfuller
+from pandas.plotting import autocorrelation_plot
+#import johansen
 
-grp4_df_rev=grp4_df.groupby(['timestamp'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
+adfuller(grp2_df_rev['meter_reading']['mean']) # NO TREND 
+
+plt.plot(grp2_df_rev['meter_reading']['mean'])
+plt.show()
+
+
+adfuller(grp2_df_rev['square_feet']['mean'])
+adfuller(grp2_df_rev['air_temperature']['mean'])
+adfuller(grp2_df_rev['dew_temperature']['mean'])
+adfuller(grp2_df_rev['cloud_coverage']['mean']) 
+adfuller(grp2_df_rev['precip_depth_1_hr']['mean']) #we can not differentiate this
+adfuller(grp2_df_rev['sea_level_pressure']['mean']) #we can not differentiate this
+adfuller(grp2_df_rev['wind_direction']['mean']) #we can not differentiate this
+adfuller(grp2_df_rev['wind_speed']['mean']) #we can not differentiate this NO TREND 
+
+
+
+plt.plot(grp2_df_rev['meter_reading'])
+plt.plot(grp2_df_rev['cloud_coverage'])
+plt.plot(grp2_df_rev['precip_depth_1_hr'])
+plt.plot(grp2_df_rev['sea_level_pressure'])
+plt.plot(grp2_df_rev['wind_direction'])
+plt.plot(grp2_df_rev['wind_speed'])
+#plt.plot(grp2_df_rev['square_feet'])
+plt.legend(['meter_reading','cloud_coverage','precip_depth_1_hr','sea_level_pressure','wind_direction','wind_speed','square_feet'])
+plt.show()
+
+(grp2_df_rev['meter_reading']['mean'],grp2_df_rev['wind_direction']['mean'])
+(grp2_df_rev.corr()).iloc[:,0]
+
+
+plt.plot(grp2_df_rev['meter_reading'])
+plt.plot(grp2_df_rev['wind_direction'])
+plt.legend(['meter_reading','wind_direction'])
+plt.show()
+
+
+
+import statsmodels.api as sm
+import statsmodels
+
+
+# OK THERE IS NO TREND HERE  (ON BOTH SERIES )
+mod1_grp2=sm.OLS(np.array(grp2_df_rev['meter_reading']['mean']),statsmodels.tools.tools.add_constant(np.array(grp2_df_rev['wind_direction']['mean'])),hasconst=False)
+mod1_grp2.fit().summary()
+results=mod1_grp2.fit()
+plt.hist(results.resid)
+plt.show()
+
+adfuller(results.resid)
+
+# OBVIOUSLY RESIDUALS WITHOUT TREND
+
+
+
+mod2_grp2=sm.OLS(np.array(grp2_df_rev['meter_reading']['mean']),np.array(grp2_df_rev['wind_direction']['mean']),hasconst=False)
+mod2_grp2.fit().summary()
+results2=mod2_grp2.fit()
+plt.hist(results2.resid)
+plt.show()
+
+
+
+
+
+
+
+
+grp4_df['date']=grp4_df['timestamp'].dt.date
+grp4_df_rev=grp4_df.groupby(['date'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
+
 
 grp4_df_rev.columns
 
@@ -539,13 +617,136 @@ plt.plot(grp4_df_rev['meter_reading'])
 plt.show()
 
 
+grp4_df_rev.corr()
 
-grp1_df_rev=grp1_df.groupby(['timestamp'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
+plt.plot(grp4_df_rev['meter_reading'])
+plt.plot(grp4_df_rev['air_temperature'])
+plt.show()
 
+from statsmodels.tsa.stattools import adfuller
+
+grp4_df_rev['meter_reading']
+
+
+adfuller(grp4_df_rev['meter_reading']['mean']) # NO TREND HERE 
+adfuller(grp4_df_rev['square_feet']['mean'])
+adfuller(grp4_df_rev['air_temperature']['mean']) # THIS SERIE HAS TREND (IT IS NOT POSSSIBLE TO USE LIKE THAT i HAVE TO DIFF THIS SERIE)
+adfuller(grp4_df_rev['dew_temperature']['mean'])
+adfuller(grp4_df_rev['cloud_coverage']['mean']) 
+adfuller(grp4_df_rev['precip_depth_1_hr']['mean']) 
+adfuller(grp4_df_rev['sea_level_pressure']['mean'])
+adfuller(grp4_df_rev['wind_direction']['mean']) 
+adfuller(grp4_df_rev['wind_speed']['mean']) 
+
+
+
+plt.plot(grp4_df_rev['air_temperature']['mean'])
+#plt.plot(grp4_df_rev['meter_reading']['mean'])
+plt.show()
+
+
+
+grp4_df_rev.columns
+grp4_df_rev.corr().iloc[:,0]
+
+plt.plot(grp4_df_rev['meter_reading'].diff())
+plt.plot(grp4_df_rev['sea_level_pressure'].diff())
+plt.plot(grp4_df_rev['air_temperature'].diff())
+# plt.plot(grp4_df_rev['square_feet'].diff())
+# plt.plot(grp4_df_rev['sea_level_pressure'].diff())
+# plt.plot(grp4_df_rev['cloud_coverage'].diff())
+# plt.plot(grp4_df_rev['precip_depth_1_hr'].diff())
+# plt.plot(grp4_df_rev['wind_speed'].diff())
+plt.legend(['meter_reading','square_feet'])#,'square_feet','sea_level_pressure','cloud_coverage','precip_depth_1_hr','wind_speed'])
+plt.show()
+
+X=grp4_df_rev[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage', 'dew_temperature','precip_depth_1_hr','wind_direction', 'wind_speed']].reset_index() # check the entry
+
+mod1_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X.iloc[:,range(1,X.shape[1])])),hasconst=True)
+mod1_grp4.fit().summary()
+results=mod1_grp2.fit()
+plt.hist(results.resid)
+plt.show()
+
+
+
+
+
+
+# X.iloc[:,6]
+# X1=grp4_df_rev[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage', 'dew_temperature','wind_direction', 'wind_speed']].reset_index()
+# mod2_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X1.iloc[:,range(1,X1.shape[1])])),hasconst=True)
+# mod2_grp4.fit().summary()
+# results2=mod2_grp4.fit()
+# plt.hist(results2.resid)
+# plt.show()
+
+
+# X2=grp4_df_rev[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage', 'dew_temperature', 'wind_speed']].reset_index()
+# mod3_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X2.iloc[:,range(1,X2.shape[1])])),hasconst=True)
+# mod3_grp4.fit().summary()
+# results3=mod3_grp4.fit()
+# plt.hist(results3.resid)
+# plt.show()
+
+# X3=grp4_df_rev[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage', 'dew_temperature']].reset_index()
+# mod4_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X3.iloc[:,range(1,X3.shape[1])])),hasconst=True)
+# mod4_grp4.fit().summary()
+# results4=mod4_grp4.fit()
+# plt.hist(results4.resid)
+# plt.show()
+
+# X4=grp4_df_rev[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage']].reset_index()
+# mod5_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X4.iloc[:,range(1,X4.shape[1])])),hasconst=True)
+# mod5_grp4.fit().summary()
+# results5=mod5_grp4.fit()
+# plt.hist(results5.resid)
+# plt.show()
+
+# X5=grp4_df_rev[['square_feet', 'air_temperature','cloud_coverage']].reset_index()
+# X5.corr().iloc[:,0]
+# mod6_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X5.iloc[:,range(1,X5.shape[1])])),hasconst=True)
+# mod6_grp4.fit().summary()
+# results6=mod6_grp4.fit()
+# plt.hist(results6.resid)
+# plt.show()
+
+ 'air_temperature'
+X6=grp4_df_rev[['square_feet']].reset_index()
+X6.corr().iloc[:,0]
+mod7_grp4=sm.OLS(np.array((grp4_df_rev['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X6.iloc[:,range(1,X6.shape[1])])),hasconst=True)
+mod7_grp4.fit().summary()
+results7=mod7_grp4.fit()
+plt.hist(results7.resid)
+plt.show()
+
+
+grp1_df['date']=grp1_df['timestamp'].dt.date
+grp1_df_rev=grp1_df.groupby(['date'])['meter_reading','square_feet','air_temperature','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed'].agg(['mean'])
 grp1_df_rev.columns
-
 plt.plot(grp1_df_rev['meter_reading'])
 plt.show()
+
+adfuller(grp1_df_rev['meter_reading']['mean'])#WE have to differentiate the series (IT HAS TREND - we cannot reject H0)
+adfuller(grp1_df_rev['square_feet']['mean'])
+adfuller(grp1_df_rev['air_temperature']['mean'])
+adfuller(grp1_df_rev['dew_temperature']['mean'])
+adfuller(grp1_df_rev['cloud_coverage']['mean']) 
+adfuller(grp1_df_rev['precip_depth_1_hr']['mean']) 
+adfuller(grp1_df_rev['sea_level_pressure']['mean']) 
+adfuller(grp1_df_rev['wind_direction']['mean']) 
+adfuller(grp1_df_rev['wind_speed']['mean']) 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -556,7 +757,15 @@ grp3_df_rev.columns
 plt.plot(grp3_df_rev['meter_reading'])
 plt.show()
 
-# # In[32]:
+
+
+
+
+
+########################################################################################
+# THIS PART WAS REMOVED 
+
+
 
 
 # # Draw a plot to see any trends in energy consumption throughout the year:
