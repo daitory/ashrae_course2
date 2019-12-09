@@ -26,6 +26,12 @@ import statsmodels as sm
 import statsmodels.formula.api as smf
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
+from statsmodels.tsa.arima_model import ARIMA
+import statsmodels.api as sm 
+from statsmodels.tsa.stattools import adfuller
+import scipy.cluster.hierarchy as sch
+from sklearn.cluster import AgglomerativeClustering
+
 
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -145,6 +151,13 @@ def display_energy_use(df, building_id, start_day, end_day):
 
 
 # ## 1.2 - DEFINE USEFUL CONSTANTS
+
+def forecast_performance(original_data,predicted):
+    MAE=np.mean(abs(original_data.values-predicted.values))
+    MAPE=np.mean(abs((predicted.values/original_data.values)-1))
+    RMSLE=(np.sum(np.log(predicted.values+1)-np.log(original_data.values+1))**2)/len(original_data.values)
+
+    return([MAE,MAPE,RMSLE])
 
 
 
@@ -310,7 +323,7 @@ print(round(df_building_metadata.isna().sum().sort_values(ascending=False) / len
 
 # filter out the data that relates to office buildings
 
-
+df_building_metadata.columns
 
 df_building_metadata = df_building_metadata[df_building_metadata['primary_use'] == 'Office']
 
@@ -368,6 +381,7 @@ if building in df['building_id'].unique():
 
 
 
+
 print(df['primary_use'].describe())
 
 # We can see that the Primary Use column, has only a single unique value (Office).
@@ -377,7 +391,7 @@ print(df['primary_use'].describe())
 # To that end, this feature is not very useful for us, since all rows represent the Office Buildings data, and we can remove it
 # from the Data Set:
 
-df = df.drop(['primary_use'], axis=1)
+#df = df.drop(['primary_use'], axis=1)
 
 
 # ## 4.2 - EXAMINE ENERGY CONSUMPTION OVER THE YEAR:
@@ -636,7 +650,7 @@ plt.show()
 
 #ADJUSTING WITH VAR (SARIMAX)
 
-model_group2=sm.tsa.statespace.SARIMAX((grp2_df_rev['meter_reading']),(grp2_df_rev[['wind_direction']]),trend='c',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
+model_group2=sm.tsa.statespace.SARIMAX((grp2_df_rev['meter_reading']['mean']),(grp2_df_rev['wind_direction']),trend='c',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
 res_grp2=model_group2.fit()
 res_grp2.summary()
 
@@ -675,7 +689,7 @@ plt.plot(grp4_df_rev['meter_reading'])
 plt.plot(grp4_df_rev['air_temperature'])
 plt.show()
 
-from statsmodels.tsa.stattools import adfuller
+
 
 grp4_df_rev['meter_reading']
 
@@ -916,10 +930,6 @@ plt.show()
 
 
 
-from statsmodels.tsa.arima_model import ARIMA
-import statsmodels.api as sm 
-
-
 
 model_group4=sm.tsa.statespace.SARIMAX(np.log(grp4_df_rev['meter_reading']),np.log(grp4_df_rev['air_temperature']),trend='ct',order=(np.concatenate([np.zeros(270),np.ones(1)]),1,0),enforce_stationarity=False)    
 res_grp4=model_group4.fit()
@@ -1148,9 +1158,12 @@ plt.show()
 
 
 
-model_group1=sm.tsa.statespace.SARIMAX((grp1_df_rev['meter_reading']),(grp1_df_rev[['air_temperature','sea_level_pressure']]),trend='ct',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
+model_group1=sm.tsa.statespace.SARIMAX((grp1_df_rev['meter_reading']),(grp1_df_rev[['air_temperature','sea_level_pressure']]),trend='t',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
 res_grp1=model_group1.fit()
 res_grp1.summary()
+
+
+
 
 plt.plot(res_grp1.resid)
 plt.show()
@@ -1166,8 +1179,8 @@ plot_pacf(res_grp1.resid)
 plt.show()
 
 
-
-
+###########################################################
+#previous one is the last model fit for the group1
 
 
 
@@ -1218,7 +1231,7 @@ res_grp3_2=model_group3_2.fit()
 res_grp3_2.summary()
 
 
-model_group3_3=sm.tsa.statespace.SARIMAX((grp3_df_rev['meter_reading']),(grp3_df_rev[['square_feet', 'sea_level_pressure', 'wind_direction','wind_speed']]),trend='t',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=True)    
+model_group3_3=sm.tsa.statespace.SARIMAX((grp3_df_rev['meter_reading']),(grp3_df_rev[['square_feet', 'sea_level_pressure', 'wind_direction','wind_speed']]),trend='t',order=(np.concatenate([np.zeros(300),np.ones(1)]),1,0),enforce_stationarity=True)    
 res_grp3_3=model_group3_3.fit()
 res_grp3_3.summary()
 
@@ -1238,10 +1251,133 @@ plt.show()
 
 
 
+###########################################################################################################
+# TEST
+
+
+start = time.time()
+
+df_test = pd.read_csv(filepath_or_buffer='D:\\Documents\\Data Science Certificate\\Course 2\\Group Assignment\\ashrae original\\test.csv', sep=',', low_memory=False)
+
+print('Time to read the CSV file into a dataframe: ',round((time.time()-start), 2), 'seconds \n')
+
+startingMemoryUsage = df_test.memory_usage().sum() / 1024**2
+
+print('Dataframe size is {:.2f} MB'.format(startingMemoryUsage))
+
+
+df_test.columns
+
+df_test.shape
+
+df_test['date']=pd.to_datetime(df_test['timestamp']).dt.date
+
+test_data=df_test[['date','building_id']].drop_duplicates()
+#df_test=df_test.groupby(['date','building_id'])[].agg(['mean'])
+test_data['date'].unique()
+
+test_data['date'].unique()
+
+df_test[['date']].drop_duplicates()
+
+
+
+##########################################################################################################
+df['date']=pd.to_datetime(df['timestamp']).dt.date
+df.columns
+
+
+
+data_to_test_set=df[['building_id','site_id']].drop_duplicates()
+
+data_to_test_set['site_id'][data_to_test_set['site_id'].isna()]
+
+
+
+test_data_complete=pd.merge(test_data,data_to_test_set,how="left",on='building_id')
+
+test_data_complete[test_data_complete['building_id']==15]
+
+data_to_test_set[data_to_test_set['site_id']==15]
+
+test_data_complete[test_data_complete['site_id']==15]
+
+test_data_filtered=test_data_complete[(test_data_complete['site_id'].isna())==False]
+
+to_serie_1=test_data_filtered[test_data_filtered['site_id'].isin(similarity_constructor[clusters_study==1].index.values)]
+to_serie_1
+
+#test_data_filtered=test_data_filtered.drop('cluster',axis=1)
+
+df[df['site_id'].isin(similarity_constructor[clusters_study==1].index.values)]
+
+##############################################################################################################
+# FORECAST GROUP 1
+forecast_30_days_grp1=res_grp1.forecast(steps=30,exog=grp1_df_rev[['air_temperature','sea_level_pressure']].iloc[range(0,30),range(0,2)])
+
+plt.plot(forecast_30_days_grp1)
+plt.plot(grp1_df_rev['meter_reading'].iloc[range(grp1_df_rev['meter_reading'].shape[0]-30,grp1_df_rev['meter_reading'].shape[0])])
+plt.legend(['Predicted','Actual'])
+plt.show()
+
+salida=forecast_performance(grp1_df_rev['meter_reading'].iloc[range(grp1_df_rev['meter_reading'].shape[0]-30,grp1_df_rev['meter_reading'].shape[0])],forecast_30_days_grp1)
 
 
 
 ########################################################################################
+# FORECAST GROUP 2
+
+res_grp2
+
+grp2_df_rev.tail()
+forecast_30_days_grp2=res_grp2.forecast(steps=30,exog=grp2_df_rev[['wind_direction']].iloc[range(grp2_df_rev[['wind_direction']].shape[0]-30,grp2_df_rev[['wind_direction']].shape[0]),range(0,1)])
+
+
+forecast_30_days_grp2.index=grp2_df_rev['meter_reading'].iloc[range(grp2_df_rev['meter_reading'].shape[0]-30,grp2_df_rev['meter_reading'].shape[0])].index.values
+plt.plot(forecast_30_days_grp2)
+plt.plot(grp2_df_rev['meter_reading'].iloc[range(grp2_df_rev['meter_reading'].shape[0]-30,grp2_df_rev['meter_reading'].shape[0])])
+plt.legend(['Predicted','Actual'])
+plt.show()
+
+salida2=forecast_performance(grp2_df_rev['meter_reading'].iloc[range(grp2_df_rev['meter_reading'].shape[0]-30,grp2_df_rev['meter_reading'].shape[0])],forecast_30_days_grp2)
+
+
+
+
+##############################################################################################################
+# FORECAST GROUP 3
+
+forecast_30_days_grp3=res_grp3_3.forecast(steps=30,exog=grp3_df_rev[['square_feet', 'sea_level_pressure', 'wind_direction','wind_speed']].iloc[range(grp3_df_rev[['wind_direction']].shape[0]-30,grp3_df_rev[['wind_direction']].shape[0]),range(0,4)])
+
+
+forecast_30_days_grp3.index=grp3_df_rev['meter_reading'].iloc[range(grp3_df_rev['meter_reading'].shape[0]-30,grp3_df_rev['meter_reading'].shape[0])].index.values
+plt.plot(forecast_30_days_grp3)
+plt.plot(grp3_df_rev['meter_reading'].iloc[range(grp3_df_rev['meter_reading'].shape[0]-30,grp3_df_rev['meter_reading'].shape[0])])
+plt.legend(['Predicted','Actual'])
+plt.show()
+
+salida3=forecast_performance(grp3_df_rev['meter_reading'].iloc[range(grp3_df_rev['meter_reading'].shape[0]-30,grp3_df_rev['meter_reading'].shape[0])],forecast_30_days_grp3)
+
+
+
+
+########################################################################################
+# FORECAST GROUP 4
+
+
+forecast_30_days_grp4=res_grp4_5.forecast(steps=30,exog=grp4_df_rev[['sea_level_pressure','wind_direction']].iloc[range(grp4_df_rev[['wind_direction']].shape[0]-30,grp4_df_rev[['wind_direction']].shape[0]),range(0,2)])
+
+
+forecast_30_days_grp4.index=grp4_df_rev['meter_reading'].iloc[range(grp4_df_rev['meter_reading'].shape[0]-30,grp4_df_rev['meter_reading'].shape[0])].index.values
+plt.plot(forecast_30_days_grp4)
+plt.plot(grp4_df_rev['meter_reading'].iloc[range(grp4_df_rev['meter_reading'].shape[0]-30,grp4_df_rev['meter_reading'].shape[0])])
+plt.legend(['Predicted','Actual'])
+plt.show()
+
+salida4=forecast_performance(grp4_df_rev['meter_reading'].iloc[range(grp4_df_rev['meter_reading'].shape[0]-30,grp3_df_rev['meter_reading'].shape[0])],forecast_30_days_grp4)
+
+
+
 # THIS PART WAS REMOVED 
 
 
