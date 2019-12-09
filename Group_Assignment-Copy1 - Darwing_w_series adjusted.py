@@ -1202,14 +1202,6 @@ adfuller(grp3_df_rev['wind_speed']['mean'])
 
 
 
-adfuller(grp3_df_rev['dew_temperature']['mean'])
-adfuller(grp3_df_rev['cloud_coverage']['mean']) 
-adfuller(grp3_df_rev['precip_depth_1_hr']['mean']) 
-adfuller(grp3_df_rev['sea_level_pressure']['mean'])
-adfuller(grp3_df_rev['wind_direction']['mean']) 
-adfuller(grp3_df_rev['wind_speed']['mean']) 
-
-
 
 model_group3=sm.tsa.statespace.SARIMAX((grp3_df_rev['meter_reading']),(grp3_df_rev[['square_feet','cloud_coverage','dew_temperature','precip_depth_1_hr', 'sea_level_pressure', 'wind_direction','wind_speed']]),trend='t',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
 res_grp3=model_group3.fit()
