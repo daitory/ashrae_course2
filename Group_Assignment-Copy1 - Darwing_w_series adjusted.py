@@ -22,7 +22,7 @@ from dateutil.parser import parse
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
-import statsmodels as sm
+#import statsmodels as sm
 import statsmodels.formula.api as smf
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -31,7 +31,7 @@ import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
 import scipy.cluster.hierarchy as sch
 from sklearn.cluster import AgglomerativeClustering
-
+import statsmodels
 
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -1091,7 +1091,7 @@ plt.show()
 
 X_diff=grp1_df_rev_differentiated[['square_feet', 'air_temperature','sea_level_pressure','cloud_coverage', 'dew_temperature','precip_depth_1_hr','wind_direction', 'wind_speed']].reset_index()
 X_diff.corr().iloc[:,0]
-mod_dif_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff.iloc[:,range(1,X_diff.shape[1])])),hasconst=True)
+mod_dif_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff.iloc[:,range(1,X_diff.shape[1])])),hasconst=True)
 mod_dif_grp1.fit().summary()
 results_mod_dif=mod_dif_grp1.fit()
 plt.hist(results_mod_dif.resid)
@@ -1101,7 +1101,7 @@ plt.show()
 
 X_diff2=grp1_df_rev_differentiated[['square_feet', 'air_temperature','sea_level_pressure', 'dew_temperature','precip_depth_1_hr','wind_direction']].reset_index()
 X_diff2.corr().iloc[:,0]
-mod_dif2_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff2.iloc[:,range(1,X_diff2.shape[1])])),hasconst=True)
+mod_dif2_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff2.iloc[:,range(1,X_diff2.shape[1])])),hasconst=True)
 mod_dif2_grp1.fit().summary()
 results_mod_dif2=mod_dif2_grp1.fit()
 plt.hist(results_mod_dif2.resid)
@@ -1112,7 +1112,7 @@ plt.show()
 
 X_diff3=grp1_df_rev_differentiated[['square_feet', 'air_temperature','sea_level_pressure', 'dew_temperature','wind_direction']].reset_index()
 X_diff3.corr().iloc[:,0]
-mod_dif3_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff3.iloc[:,range(1,X_diff3.shape[1])])),hasconst=True)
+mod_dif3_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff3.iloc[:,range(1,X_diff3.shape[1])])),hasconst=True)
 mod_dif3_grp1.fit().summary()
 results_mod_dif3=mod_dif3_grp1.fit()
 plt.hist(results_mod_dif3.resid)
@@ -1122,7 +1122,7 @@ plt.show()
 # AS THERE IS A STRONG CORRELATION AMONG AIR_TEMP AND DEW_TEMP
 X_diff3=grp1_df_rev_differentiated[['square_feet', 'air_temperature','sea_level_pressure', 'dew_temperature','wind_direction']].reset_index()
 X_diff3.corr().iloc[:,0]
-mod_dif3_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff3.iloc[:,range(1,X_diff3.shape[1])])),hasconst=True)
+mod_dif3_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff3.iloc[:,range(1,X_diff3.shape[1])])),hasconst=True)
 mod_dif3_grp1.fit().summary()
 results_mod_dif3=mod_dif3_grp1.fit()
 plt.hist(results_mod_dif3.resid)
@@ -1131,7 +1131,7 @@ plt.show()
 
 X_diff4=grp1_df_rev_differentiated[['square_feet', 'air_temperature','sea_level_pressure','wind_direction']].reset_index()
 X_diff4.corr().iloc[:,0]
-mod_dif4_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff4.iloc[:,range(1,X_diff4.shape[1])])),hasconst=True)
+mod_dif4_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff4.iloc[:,range(1,X_diff4.shape[1])])),hasconst=True)
 mod_dif4_grp1.fit().summary()
 results_mod_dif4=mod_dif4_grp1.fit()
 plt.hist(results_mod_dif4.resid)
@@ -1140,16 +1140,16 @@ plt.show()
 
 X_diff5=grp1_df_rev_differentiated[['air_temperature','sea_level_pressure','wind_direction']].reset_index()
 X_diff5.corr().iloc[:,0]
-mod_dif5_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff5.iloc[:,range(1,X_diff5.shape[1])])),hasconst=True)
+mod_dif5_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff5.iloc[:,range(1,X_diff5.shape[1])])),hasconst=True)
 mod_dif5_grp1.fit().summary()
 results_mod_dif5=mod_dif5_grp1.fit()
 plt.hist(results_mod_dif5.resid)
 plt.show()
 
 
-X_diff6=grp1_df_rev_differentiated[['air_temperature','sea_level_pressure']].reset_index()
+X_diff6=grp1_df_rev_differentiated[['air_temperature']].reset_index()
 X_diff6.corr().iloc[:,0]
-mod_dif6_grp1=sm.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff6.iloc[:,range(1,X_diff6.shape[1])])),hasconst=True)
+mod_dif6_grp1=statsmodels.regression.linear_model.OLS(np.array((grp1_df_rev_differentiated['meter_reading']['mean'].reset_index()).iloc[:,1]),statsmodels.tools.tools.add_constant(np.array(X_diff6.iloc[:,range(1,X_diff6.shape[1])])),hasconst=True)
 mod_dif6_grp1.fit().summary()
 results_mod_dif6=mod_dif6_grp1.fit()
 plt.hist(results_mod_dif6.resid)
@@ -1158,7 +1158,7 @@ plt.show()
 
 
 
-model_group1=sm.tsa.statespace.SARIMAX((grp1_df_rev['meter_reading']),(grp1_df_rev[['air_temperature','sea_level_pressure']]),trend='t',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
+model_group1=sm.tsa.statespace.SARIMAX((grp1_df_rev['meter_reading']),(grp1_df_rev[['air_temperature']]),trend='t',order=(np.concatenate([np.zeros(180),np.ones(1)]),1,0),enforce_stationarity=False)    
 res_grp1=model_group1.fit()
 res_grp1.summary()
 
